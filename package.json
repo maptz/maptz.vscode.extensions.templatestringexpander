@@ -1,0 +1,47 @@
+{
+    "name": "template-string-expander",
+    "displayName": "template-string-expander",
+    "description": "Converts string literals into template strings in Javascript, Typescript and CSharp.",
+    "version": "0.0.1",
+    "homepage": "https://raw.githubusercontent.com/maptz/Maptz.VSCode.Extensions.templatestringexpander/master/ReadMe.md",
+    "repository": "https://github.com/maptz/Maptz.VSCode.Extensions.templatestringexpander",
+    "icon": "imgs/Icon.png",
+    "publisher": "maptz",
+    "engines": {
+        "vscode": "^1.25.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onCommand:templateStringExpander.convertToTemplateString"
+    ],
+    "main": "./out/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "templateStringExpander.convertToTemplateString",
+                "title": "Convert to Template String"
+            }
+        ],
+        "keybindings":[
+            {
+                "command": "templateStringExpander.convertToTemplateString",
+                "key": "ctrl+m ctrl+2"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "npm run compile && node ./node_modules/vscode/bin/test"
+    },
+    "devDependencies": {
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.6",
+        "@types/node": "^7.0.43",
+        "@types/mocha": "^2.2.42"
+    }
+}
