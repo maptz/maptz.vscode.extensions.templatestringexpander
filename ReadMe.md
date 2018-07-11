@@ -1,6 +1,8 @@
 # Template String Expander
 
-A small Visual Studio Code extension for converting `"string literals"` into `$"template strings"`. 
+A Visual Studio Code extension for converting `"string literals"` into `$"template strings"`. 
+
+![String Literals](https://raw.githubusercontent.com/maptz/Maptz.VSCode.Extensions.templatestringexpander/master/imgs/CSharp_string_template.gif)
 
 ## Features
 
