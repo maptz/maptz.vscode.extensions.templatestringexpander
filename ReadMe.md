@@ -34,13 +34,15 @@ The extension doesn't expose any settings.
 
 ## Known Issues
 
-No known issues to-date. Please file a bug on github here. 
+No known issues to-date. Please file a bug on [github](https://github.com/maptz/maptz.vscode.extensions.templatestringexpander). 
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.0.4
+
+- Added React support. Thanks @mattread90. See [Pull #1](https://github.com/maptz/maptz.vscode.extensions.templatestringexpander/pull/1).
 
 ### 0.0.1
 
-Initial alpha release of the extension.
+- Initial alpha release of the extension.
 
