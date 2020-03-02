@@ -38,7 +38,7 @@ No known issues to-date. Please file a bug on [github](https://github.com/maptz/
 
 ## Release Notes
 
-### 0.0.4
+### 0.0.5
 
 - Added React support. Thanks @mattread90. See [Pull #1](https://github.com/maptz/maptz.vscode.extensions.templatestringexpander/pull/1).
 
