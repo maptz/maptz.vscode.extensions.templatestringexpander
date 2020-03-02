@@ -52,7 +52,10 @@ export function activate(context: vscode.ExtensionContext) {
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "string-template-expander" is now active!');
 
-
+    const languageIds = {
+        csharp: ['csharp'],
+        javascript: ['javascript', 'javascriptreact', 'typescript']
+    }
 
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
@@ -65,17 +68,12 @@ export function activate(context: vscode.ExtensionContext) {
         var ate = vscode.window.activeTextEditor;
         if (!ate) return;
 
-        if (ate.document.languageId == "csharp") {
+        if (languageIds.csharp.includes(ate.document.languageId)) {
             convertCSStringToTemplate(ate).catch(err => {
                 throw err;
             });
         }
-        else if (ate.document.languageId == "javascript") {
-            convertJavascriptStringToTemplate(ate).catch(err => {
-                throw err;
-            });
-        }
-        else if (ate.document.languageId == "typescript") {
+        else if (languageIds.javascript.includes(ate.document.languageId)) {
             convertJavascriptStringToTemplate(ate).catch(err => {
                 throw err;
             });
