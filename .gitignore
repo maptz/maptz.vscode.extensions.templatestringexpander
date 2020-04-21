@@ -22,7 +22,7 @@ packages/
 gulp-tsc*/
 
 #Node modules
-node_modules/
+node_modules
 .tscache
 
 #Bower components
