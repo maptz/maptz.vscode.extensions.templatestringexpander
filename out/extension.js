@@ -53,7 +53,7 @@ function activate(context) {
     console.log('Congratulations, your extension "string-template-expander" is now active!');
     const languageIds = {
         csharp: ['csharp'],
-        javascript: ['javascript', 'javascriptreact', 'typescript']
+        javascript: ['javascript', 'javascriptreact', 'typescript', 'typescriptreact']
     };
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
@@ -83,7 +83,9 @@ function getTextmateRegistry() {
     var grammarPaths = {
         'source.cs': `${vscode.env.appRoot}/extensions/csharp/syntaxes/csharp.tmLanguage.json`,
         'source.js': `${vscode.env.appRoot}/extensions/javascript/syntaxes/JavaScript.tmLanguage.json`,
-        'source.ts': `${vscode.env.appRoot}/extensions/typescript-basics/syntaxes/TypeScript.tmLanguage.json`
+        'source.jsx': `${vscode.env.appRoot}/extensions/javascript/syntaxes/JavaScriptReact.tmLanguage.json`,
+        'source.ts': `${vscode.env.appRoot}/extensions/typescript-basics/syntaxes/TypeScript.tmLanguage.json`,
+        'source.tsx': `${vscode.env.appRoot}/extensions/typescript-basics/syntaxes/TypeScriptReact.tmLanguage.json`
     };
     var registry = new textmate.Registry({
         loadGrammar: function (scopeName) {
@@ -109,7 +111,7 @@ function getTextmateRegistry() {
 function convertJavascriptStringToTemplate(textEditor) {
     return __awaiter(this, void 0, void 0, function* () {
         var registry = getTextmateRegistry();
-        var grammar = yield registry.loadGrammar('source.ts').catch(err => {
+        var grammar = yield registry.loadGrammar('source.tsx').catch(err => {
             debugger;
         });
         ;
@@ -127,19 +129,19 @@ function convertJavascriptStringToTemplate(textEditor) {
         }
         if (!currentToken)
             return;
-        if (currentToken.scopes.filter(p => p == "string.quoted.double.ts").length == 0) {
+        if (!currentToken.scopes.some(p => p == "string.quoted.double.tsx" || p == "string.quoted.single.tsx")) {
             return;
         }
         //:"punctuation.definition.string.begin.cs"
-        var isStartToken = (currentToken.scopes.filter(p => p == "punctuation.definition.string.begin.ts").length > 0);
-        var isEndToken = (currentToken.scopes.filter(p => p == "punctuation.definition.string.end.ts").length > 0);
+        var isStartToken = (currentToken.scopes.includes("punctuation.definition.string.begin.tsx"));
+        var isEndToken = (currentToken.scopes.includes("punctuation.definition.string.end.tsx"));
         //Look for the start token.
         var startToken = null;
         var endToken = null;
         if (!isStartToken) {
             for (let i = currentTokenIndex; i >= 0; i--) {
                 let tok = lineTokens[i];
-                if (tok.scopes.filter(p => p == "punctuation.definition.string.begin.ts").length > 0) {
+                if (tok.scopes.includes("punctuation.definition.string.begin.tsx")) {
                     startToken = tok;
                     break;
                 }
@@ -151,7 +153,7 @@ function convertJavascriptStringToTemplate(textEditor) {
         if (!isEndToken) {
             for (let i = currentTokenIndex; i < lineTokens.length; i++) {
                 let tok = lineTokens[i];
-                if (tok.scopes.filter(p => p == "punctuation.definition.string.end.ts").length > 0) {
+                if (tok.scopes.includes("punctuation.definition.string.end.tsx")) {
                     endToken = tok;
                     break;
                 }
@@ -160,13 +162,13 @@ function convertJavascriptStringToTemplate(textEditor) {
         else {
             endToken = currentToken;
         }
-        var firstChar = currentLine.substr(startToken.startIndex, 1);
-        var lastChar = currentLine.substr(endToken.startIndex, 1);
+        // if we need to add brackets as in <div id='a' /> to <div id={`a`} />
+        const isJSXAttribute = currentToken.scopes.includes('meta.tag.attributes.tsx') && !currentToken.scopes.includes('meta.embedded.expression.tsx');
         textEditor.edit(editor => {
             var firstCharRange = new vscode.Range(new vscode.Position(textEditor.selection.start.line, startToken.startIndex), new vscode.Position(textEditor.selection.start.line, startToken.startIndex + 1));
             var lastCharRange = new vscode.Range(new vscode.Position(textEditor.selection.start.line, endToken.startIndex), new vscode.Position(textEditor.selection.start.line, endToken.startIndex + 1));
-            editor.replace(firstCharRange, "`");
-            editor.replace(lastCharRange, "`");
+            editor.replace(firstCharRange, isJSXAttribute ? "{`" : "`");
+            editor.replace(lastCharRange, isJSXAttribute ? "`}" : "`");
         });
     });
 }
