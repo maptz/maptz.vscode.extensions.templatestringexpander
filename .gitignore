@@ -27,3 +27,5 @@ node_modules
 
 #Bower components
 bower_components/
+
+.vs/
