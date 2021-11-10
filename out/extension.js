@@ -79,7 +79,10 @@ function activate(context) {
 }
 exports.activate = activate;
 function getTextmateRegistry() {
-    const textmate = vscodeinterop.getCoreNodeModule('vscode-textmate');
+    //See https://github.com/microsoft/vscode-textmate
+    //const textmate = vscodeinterop.getCoreNodeModule('vscode-textmate');
+    const textmate = require('vscode-textmate');
+    const oniguruma = require('vscode-oniguruma');
     var grammarPaths = {
         'source.cs': `${vscode.env.appRoot}/extensions/csharp/syntaxes/csharp.tmLanguage.json`,
         'source.js': `${vscode.env.appRoot}/extensions/javascript/syntaxes/JavaScript.tmLanguage.json`,
@@ -87,7 +90,18 @@ function getTextmateRegistry() {
         'source.ts': `${vscode.env.appRoot}/extensions/typescript-basics/syntaxes/TypeScript.tmLanguage.json`,
         'source.tsx': `${vscode.env.appRoot}/extensions/typescript-basics/syntaxes/TypeScriptReact.tmLanguage.json`
     };
+    //node_modules.asar.unpacked
+    //const wasmPath = path.join(__dirname, './node_modules/vscode-oniguruma/release/onig.wasm')
+    const wasmPath = `${vscode.env.appRoot}/node_modules.asar.unpacked/vscode-oniguruma/release/onig.wasm`;
+    const wasmBin = fs.readFileSync(wasmPath).buffer;
+    const vscodeOnigurumaLib = oniguruma.loadWASM(wasmBin).then(() => {
+        return {
+            createOnigScanner(patterns) { return new oniguruma.OnigScanner(patterns); },
+            createOnigString(s) { return new oniguruma.OnigString(s); }
+        };
+    });
     var registry = new textmate.Registry({
+        onigLib: vscodeOnigurumaLib,
         loadGrammar: function (scopeName) {
             var path = grammarPaths[scopeName];
             if (path) {
@@ -111,64 +125,70 @@ function getTextmateRegistry() {
 function convertJavascriptStringToTemplate(textEditor) {
     return __awaiter(this, void 0, void 0, function* () {
         var registry = getTextmateRegistry();
-        var grammar = yield registry.loadGrammar('source.tsx').catch(err => {
+        var grammar = registry.loadGrammar('source.tsx').catch(err => {
             debugger;
-        });
-        ;
-        var currentLine = textEditor.document.lineAt(textEditor.selection.start.line).text;
-        var lineTokens = grammar.tokenizeLine(currentLine).tokens;
-        var currentToken = null;
-        var currentTokenIndex = -1;
-        for (let i = 0; i < lineTokens.length; i++) {
-            let tok = lineTokens[i];
-            if (tok.startIndex <= textEditor.selection.start.character && tok.endIndex >= textEditor.selection.start.character) {
-                currentToken = tok;
-                currentTokenIndex = i;
-                break;
-            }
-        }
-        if (!currentToken)
-            return;
-        if (!currentToken.scopes.some(p => p == "string.quoted.double.tsx" || p == "string.quoted.single.tsx")) {
-            return;
-        }
-        //:"punctuation.definition.string.begin.cs"
-        var isStartToken = (currentToken.scopes.includes("punctuation.definition.string.begin.tsx"));
-        var isEndToken = (currentToken.scopes.includes("punctuation.definition.string.end.tsx"));
-        //Look for the start token.
-        var startToken = null;
-        var endToken = null;
-        if (!isStartToken) {
-            for (let i = currentTokenIndex; i >= 0; i--) {
+        })
+            .then(grammar => {
+            var currentLine = textEditor.document.lineAt(textEditor.selection.start.line).text;
+            //TODO This line appaearsappears to be broken!!
+            const vsctm = require('vscode-textmate');
+            //const vsctm = vscodeinterop.getCoreNodeModule('vscode-textmate');
+            let ruleStack = vsctm.INITIAL;
+            var tokenized = grammar.tokenizeLine(currentLine, ruleStack);
+            var lineTokens = tokenized.tokens;
+            var currentToken = null;
+            var currentTokenIndex = -1;
+            for (let i = 0; i < lineTokens.length; i++) {
                 let tok = lineTokens[i];
-                if (tok.scopes.includes("punctuation.definition.string.begin.tsx")) {
-                    startToken = tok;
+                if (tok.startIndex <= textEditor.selection.start.character && tok.endIndex >= textEditor.selection.start.character) {
+                    currentToken = tok;
+                    currentTokenIndex = i;
                     break;
                 }
             }
-        }
-        else {
-            startToken = currentToken;
-        }
-        if (!isEndToken) {
-            for (let i = currentTokenIndex; i < lineTokens.length; i++) {
-                let tok = lineTokens[i];
-                if (tok.scopes.includes("punctuation.definition.string.end.tsx")) {
-                    endToken = tok;
-                    break;
+            if (!currentToken)
+                return;
+            if (!currentToken.scopes.some(p => p == "string.quoted.double.tsx" || p == "string.quoted.single.tsx")) {
+                return;
+            }
+            //:"punctuation.definition.string.begin.cs"
+            var isStartToken = (currentToken.scopes.includes("punctuation.definition.string.begin.tsx"));
+            var isEndToken = (currentToken.scopes.includes("punctuation.definition.string.end.tsx"));
+            //Look for the start token.
+            var startToken = null;
+            var endToken = null;
+            if (!isStartToken) {
+                for (let i = currentTokenIndex; i >= 0; i--) {
+                    let tok = lineTokens[i];
+                    if (tok.scopes.includes("punctuation.definition.string.begin.tsx")) {
+                        startToken = tok;
+                        break;
+                    }
                 }
             }
-        }
-        else {
-            endToken = currentToken;
-        }
-        // if we need to add brackets as in <div id='a' /> to <div id={`a`} />
-        const isJSXAttribute = currentToken.scopes.includes('meta.tag.attributes.tsx') && !currentToken.scopes.includes('meta.embedded.expression.tsx');
-        textEditor.edit(editor => {
-            var firstCharRange = new vscode.Range(new vscode.Position(textEditor.selection.start.line, startToken.startIndex), new vscode.Position(textEditor.selection.start.line, startToken.startIndex + 1));
-            var lastCharRange = new vscode.Range(new vscode.Position(textEditor.selection.start.line, endToken.startIndex), new vscode.Position(textEditor.selection.start.line, endToken.startIndex + 1));
-            editor.replace(firstCharRange, isJSXAttribute ? "{`" : "`");
-            editor.replace(lastCharRange, isJSXAttribute ? "`}" : "`");
+            else {
+                startToken = currentToken;
+            }
+            if (!isEndToken) {
+                for (let i = currentTokenIndex; i < lineTokens.length; i++) {
+                    let tok = lineTokens[i];
+                    if (tok.scopes.includes("punctuation.definition.string.end.tsx")) {
+                        endToken = tok;
+                        break;
+                    }
+                }
+            }
+            else {
+                endToken = currentToken;
+            }
+            // if we need to add brackets as in <div id='a' /> to <div id={`a`} />
+            const isJSXAttribute = currentToken.scopes.includes('meta.tag.attributes.tsx') && !currentToken.scopes.includes('meta.embedded.expression.tsx');
+            textEditor.edit(editor => {
+                var firstCharRange = new vscode.Range(new vscode.Position(textEditor.selection.start.line, startToken.startIndex), new vscode.Position(textEditor.selection.start.line, startToken.startIndex + 1));
+                var lastCharRange = new vscode.Range(new vscode.Position(textEditor.selection.start.line, endToken.startIndex), new vscode.Position(textEditor.selection.start.line, endToken.startIndex + 1));
+                editor.replace(firstCharRange, isJSXAttribute ? "{`" : "`");
+                editor.replace(lastCharRange, isJSXAttribute ? "`}" : "`");
+            });
         });
     });
 }
