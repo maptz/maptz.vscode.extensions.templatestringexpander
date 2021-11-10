@@ -38,6 +38,10 @@ No known issues to-date. Please file a bug on [github](https://github.com/maptz/
 
 ## Release Notes
 
+### 0.0.7
+
+- Fixed issue with Javascript and Typescript. 
+
 ### 0.0.6
 
 - Added TypescriptReact support. Thanks @mattread90. See [Pull #2](https://github.com/maptz/maptz.vscode.extensions.templatestringexpander/pull/2).
