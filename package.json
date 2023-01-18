@@ -2,7 +2,7 @@
     "name": "template-string-expander",
     "displayName": "template-string-expander",
     "description": "Converts string literals into template strings in Javascript, Typescript and CSharp.",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "homepage": "https://raw.githubusercontent.com/maptz/Maptz.VSCode.Extensions.templatestringexpander/master/ReadMe.md",
     "repository": "https://github.com/maptz/Maptz.VSCode.Extensions.templatestringexpander",
     "icon": "imgs/Icon.png",
@@ -39,6 +39,9 @@
         "lint": "eslint src --ext ts",
         "test": "node ./out/test/runTest.js"
     },
+    "dependencies": {
+        "vscode-textmate": "^5.4.1"
+    },
     "devDependencies": {
         "@types/node": "^12.12.0",
         "@types/vscode": "^1.34.0",
@@ -47,7 +50,6 @@
         "eslint": "^7.21.0",
         "typescript": "^4.2.2",
         "vscode-oniguruma": "^1.5.1",
-        "vscode-test": "^1.6.1",
-        "vscode-textmate": "^5.4.1"
+        "vscode-test": "^1.6.1"
     }
 }
