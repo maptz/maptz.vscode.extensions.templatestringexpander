@@ -6,8 +6,6 @@ A Visual Studio Code extension for converting `"string literals"` into `$"templa
 
 ## Features
 
-> The extension is currently experimental and of alpha quality. Please file bugs on the github repository.
-
 This extension currently supports `CSharp`, `Javascript` and `Typescript` files. To use the extension, follow these instructions:
 
 - Open a file in one of the supported languages and place your caret within a string literal.
@@ -37,6 +35,10 @@ The extension doesn't expose any settings.
 No known issues to-date. Please file a bug on [github](https://github.com/maptz/maptz.vscode.extensions.templatestringexpander). 
 
 ## Release Notes
+
+### 1.0.0
+
+- Release version of extension.
 
 ### 0.0.7
 

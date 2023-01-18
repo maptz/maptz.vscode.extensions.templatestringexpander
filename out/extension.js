@@ -1,13 +1,4 @@
 'use strict';
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = exports.vscodeinterop = void 0;
 // The module 'vscode' contains the VS Code extensibility API
@@ -50,9 +41,8 @@ exports.vscodeinterop = vscodeinterop;
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 function activate(context) {
-    // Use the console to output diagnostic information (console.log) and errors (console.error)
-    // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "string-template-expander" is now active!');
+    // This line of code will only be executed once when your extension is activated - currently on first run of the command.
+    console.log('Extension "string-template-expander" is now active!');
     const languageIds = {
         csharp: ['csharp'],
         javascript: ['javascript', 'javascriptreact', 'typescript', 'typescriptreact']
@@ -124,82 +114,19 @@ function getTextmateRegistry() {
     });
     return registry;
 }
-function convertJavascriptStringToTemplate(textEditor) {
-    return __awaiter(this, void 0, void 0, function* () {
-        var registry = getTextmateRegistry();
-        var grammar = registry.loadGrammar('source.tsx').catch(err => {
-            debugger;
-        })
-            .then(grammar => {
-            var currentLine = textEditor.document.lineAt(textEditor.selection.start.line).text;
-            //TODO This line appaearsappears to be broken!!
-            const vsctm = require('vscode-textmate');
-            //const vsctm = vscodeinterop.getCoreNodeModule('vscode-textmate');
-            let ruleStack = vsctm.INITIAL;
-            var tokenized = grammar.tokenizeLine(currentLine, ruleStack);
-            var lineTokens = tokenized.tokens;
-            var currentToken = null;
-            var currentTokenIndex = -1;
-            for (let i = 0; i < lineTokens.length; i++) {
-                let tok = lineTokens[i];
-                if (tok.startIndex <= textEditor.selection.start.character && tok.endIndex >= textEditor.selection.start.character) {
-                    currentToken = tok;
-                    currentTokenIndex = i;
-                    break;
-                }
-            }
-            if (!currentToken)
-                return;
-            if (!currentToken.scopes.some(p => p == "string.quoted.double.tsx" || p == "string.quoted.single.tsx")) {
-                return;
-            }
-            //:"punctuation.definition.string.begin.cs"
-            var isStartToken = (currentToken.scopes.includes("punctuation.definition.string.begin.tsx"));
-            var isEndToken = (currentToken.scopes.includes("punctuation.definition.string.end.tsx"));
-            //Look for the start token.
-            var startToken = null;
-            var endToken = null;
-            if (!isStartToken) {
-                for (let i = currentTokenIndex; i >= 0; i--) {
-                    let tok = lineTokens[i];
-                    if (tok.scopes.includes("punctuation.definition.string.begin.tsx")) {
-                        startToken = tok;
-                        break;
-                    }
-                }
-            }
-            else {
-                startToken = currentToken;
-            }
-            if (!isEndToken) {
-                for (let i = currentTokenIndex; i < lineTokens.length; i++) {
-                    let tok = lineTokens[i];
-                    if (tok.scopes.includes("punctuation.definition.string.end.tsx")) {
-                        endToken = tok;
-                        break;
-                    }
-                }
-            }
-            else {
-                endToken = currentToken;
-            }
-            // if we need to add brackets as in <div id='a' /> to <div id={`a`} />
-            const isJSXAttribute = currentToken.scopes.includes('meta.tag.attributes.tsx') && !currentToken.scopes.includes('meta.embedded.expression.tsx');
-            textEditor.edit(editor => {
-                var firstCharRange = new vscode.Range(new vscode.Position(textEditor.selection.start.line, startToken.startIndex), new vscode.Position(textEditor.selection.start.line, startToken.startIndex + 1));
-                var lastCharRange = new vscode.Range(new vscode.Position(textEditor.selection.start.line, endToken.startIndex), new vscode.Position(textEditor.selection.start.line, endToken.startIndex + 1));
-                editor.replace(firstCharRange, isJSXAttribute ? "{`" : "`");
-                editor.replace(lastCharRange, isJSXAttribute ? "`}" : "`");
-            });
-        });
-    });
-}
-function convertCSStringToTemplate(textEditor) {
-    return __awaiter(this, void 0, void 0, function* () {
-        var registry = getTextmateRegistry();
-        var grammar = yield registry.loadGrammar('source.cs');
+async function convertJavascriptStringToTemplate(textEditor) {
+    var registry = getTextmateRegistry();
+    var grammar = registry.loadGrammar('source.tsx').catch(err => {
+        debugger;
+    })
+        .then(grammar => {
         var currentLine = textEditor.document.lineAt(textEditor.selection.start.line).text;
-        var lineTokens = grammar.tokenizeLine(currentLine).tokens;
+        //TODO This line appaearsappears to be broken!!
+        const vsctm = require('vscode-textmate');
+        //const vsctm = vscodeinterop.getCoreNodeModule('vscode-textmate');
+        let ruleStack = vsctm.INITIAL;
+        var tokenized = grammar.tokenizeLine(currentLine, ruleStack);
+        var lineTokens = tokenized.tokens;
         var currentToken = null;
         var currentTokenIndex = -1;
         for (let i = 0; i < lineTokens.length; i++) {
@@ -212,30 +139,89 @@ function convertCSStringToTemplate(textEditor) {
         }
         if (!currentToken)
             return;
-        if (currentToken.scopes.filter(p => p == "string.quoted.double.cs").length == 0) {
+        if (!currentToken.scopes.some(p => p == "string.quoted.double.tsx" || p == "string.quoted.single.tsx")) {
             return;
         }
         //:"punctuation.definition.string.begin.cs"
-        var isStartToken = (currentToken.scopes.filter(p => p == "punctuation.definition.string.begin.cs").length > 0);
-        var isEndToken = (currentToken.scopes.filter(p => p == "punctuation.definition.string.end.cs").length > 0);
+        var isStartToken = (currentToken.scopes.includes("punctuation.definition.string.begin.tsx"));
+        var isEndToken = (currentToken.scopes.includes("punctuation.definition.string.end.tsx"));
         //Look for the start token.
-        var startToken = currentToken;
+        var startToken = null;
+        var endToken = null;
         if (!isStartToken) {
             for (let i = currentTokenIndex; i >= 0; i--) {
                 let tok = lineTokens[i];
-                if (tok.scopes.filter(p => p == "punctuation.definition.string.begin.cs").length > 0) {
+                if (tok.scopes.includes("punctuation.definition.string.begin.tsx")) {
                     startToken = tok;
                     break;
                 }
             }
         }
-        var firstChar = currentLine.substr(startToken.startIndex, 1);
-        if (firstChar != "$") {
-            textEditor.edit(editor => {
-                editor.insert(new vscode.Position(textEditor.selection.start.line, startToken.startIndex), "$");
-            });
+        else {
+            startToken = currentToken;
         }
+        if (!isEndToken) {
+            for (let i = currentTokenIndex; i < lineTokens.length; i++) {
+                let tok = lineTokens[i];
+                if (tok.scopes.includes("punctuation.definition.string.end.tsx")) {
+                    endToken = tok;
+                    break;
+                }
+            }
+        }
+        else {
+            endToken = currentToken;
+        }
+        // if we need to add brackets as in <div id='a' /> to <div id={`a`} />
+        const isJSXAttribute = currentToken.scopes.includes('meta.tag.attributes.tsx') && !currentToken.scopes.includes('meta.embedded.expression.tsx');
+        textEditor.edit(editor => {
+            var firstCharRange = new vscode.Range(new vscode.Position(textEditor.selection.start.line, startToken.startIndex), new vscode.Position(textEditor.selection.start.line, startToken.startIndex + 1));
+            var lastCharRange = new vscode.Range(new vscode.Position(textEditor.selection.start.line, endToken.startIndex), new vscode.Position(textEditor.selection.start.line, endToken.startIndex + 1));
+            editor.replace(firstCharRange, isJSXAttribute ? "{`" : "`");
+            editor.replace(lastCharRange, isJSXAttribute ? "`}" : "`");
+        });
     });
+}
+async function convertCSStringToTemplate(textEditor) {
+    var registry = getTextmateRegistry();
+    var grammar = await registry.loadGrammar('source.cs');
+    var currentLine = textEditor.document.lineAt(textEditor.selection.start.line).text;
+    var lineTokens = grammar.tokenizeLine(currentLine).tokens;
+    var currentToken = null;
+    var currentTokenIndex = -1;
+    for (let i = 0; i < lineTokens.length; i++) {
+        let tok = lineTokens[i];
+        if (tok.startIndex <= textEditor.selection.start.character && tok.endIndex >= textEditor.selection.start.character) {
+            currentToken = tok;
+            currentTokenIndex = i;
+            break;
+        }
+    }
+    if (!currentToken)
+        return;
+    if (currentToken.scopes.filter(p => p == "string.quoted.double.cs").length == 0) {
+        return;
+    }
+    //:"punctuation.definition.string.begin.cs"
+    var isStartToken = (currentToken.scopes.filter(p => p == "punctuation.definition.string.begin.cs").length > 0);
+    var isEndToken = (currentToken.scopes.filter(p => p == "punctuation.definition.string.end.cs").length > 0);
+    //Look for the start token.
+    var startToken = currentToken;
+    if (!isStartToken) {
+        for (let i = currentTokenIndex; i >= 0; i--) {
+            let tok = lineTokens[i];
+            if (tok.scopes.filter(p => p == "punctuation.definition.string.begin.cs").length > 0) {
+                startToken = tok;
+                break;
+            }
+        }
+    }
+    var firstChar = currentLine.substr(startToken.startIndex, 1);
+    if (firstChar != "$") {
+        textEditor.edit(editor => {
+            editor.insert(new vscode.Position(textEditor.selection.start.line, startToken.startIndex), "$");
+        });
+    }
 }
 // this method is called when your extension is deactivated
 function deactivate() {
